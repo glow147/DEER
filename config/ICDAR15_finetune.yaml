@@ -1,0 +1,24 @@
+DATA :
+  NAME : ICDAR15
+  IMAGE_SIZE : 640
+  VALID_IMAGE_SIZE : 1280
+  DATA_DIR : ICDAR15/
+  TRAIN_IMG_DIR : ICDAR15/train/images
+  TRAIN_LABEL : ICDAR15/train/labels/coco_annotations_train.json
+  VALID_IMG_DIR : ICDAR15/test/images
+  VALID_LABEL : ICDAR15/test/labels/coco_annotations_test.json
+  MAX_LEN : 8
+  SAMPLE_TEXT : 100
+
+MODEL : 
+    PARAMS : 
+        WEIGHT_DECAY : 1e-6
+        BATCH_SIZE : 4
+        MAX_STEPS : 10000
+    BACKBONE : 
+      NAME : vovnet
+      PRETRAINED : backbone/vovnet39.pth
+    OPTIMIZER : Adam
+    SCHEDULER : ""
+    SCHEDULER_PARAMS :
+      max_lr: 5e-5
