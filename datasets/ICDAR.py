@@ -49,6 +49,15 @@ class ICDAR_Dataset(Dataset):
         file_name, height, width = image_info['file_name'], image_info['height'], image_info['width']
         boxes, labels, gts, masks, thresh_map, thresh_mask = self.get_annotation(annotations, height, width)
 
+        if self.is_train:
+            if len(labels) > self.config.DATA.SAMPLE_TEXT:
+                sample_idx = np.random.choice(len(labels), self.config.DATA.SAMPLE_TEXT, replace=False)
+            else:
+                sample_idx = range(len(labels))
+            
+            boxes = [boxes[idx] for idx in sample_idx]
+            labels = [labels[idx] for idx in sample_idx]
+
         try:
             transformed = self.transform(
                 image=img,
@@ -57,11 +66,6 @@ class ICDAR_Dataset(Dataset):
                 masks=[gts, masks, thresh_map, thresh_mask]
             )
             
-            if len(transformed['category_ids']) > self.config.DATA.SAMPLE_TEXT:
-                sample_idx = np.random.choice(len(transformed['category_ids']), self.config.DATA.SAMPLE_TEXT, replace=False)
-            else:
-                sample_idx = range(len(transformed['category_ids'])
-            )
         except Exception as e:
             print(e)
             return self.__getitem__((idx + 1) % len(self))
@@ -72,14 +76,13 @@ class ICDAR_Dataset(Dataset):
         masks = torch.clip(masks,0,1)
         thresh_map = torch.clip(thresh_map,0,1)
         thresh_mask = torch.clip(thresh_mask,0,1)       
-       
-        prefs_noise = self.calculate_reference_point(
-            [transformed['bboxes'][idx] for idx in sample_idx],
-            transformed['image'].shape[0], # height
-            transformed['image'].shape[1] # width
-        )
 
         if self.is_train:
+            prefs_noise = self.calculate_reference_point(
+                transformed['bboxes'],
+                self.config.DATA.IMAGE_SIZE, # height
+                self.config.DATA.IMAGE_SIZE # width
+            )
             sample = {
                 'filename': file_name,
                 'ori_size': (width, height),
@@ -90,7 +93,7 @@ class ICDAR_Dataset(Dataset):
                 'thresh_mask': thresh_map,
                 'thresh_map': thresh_mask,
                 'pref_noise': prefs_noise.float() / self.config.DATA.IMAGE_SIZE,
-                'label': [transformed['category_ids'][idx] for idx in sample_idx]
+                'label': transformed['category_ids']
             }
 
         else:

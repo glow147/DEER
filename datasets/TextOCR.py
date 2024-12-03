@@ -46,16 +46,19 @@ class TextOCR_Dataset(Dataset):
 
         boxes, labels, gts, masks, thresh_map, thresh_mask = self.get_annotation(annotations, height, width)
 
+        if self.is_train:
+            if len(labels) > self.config.DATA.SAMPLE_TEXT:
+                sample_idx = np.random.choice(len(labels), self.config.DATA.SAMPLE_TEXT, replace=False)
+            else:
+                sample_idx = range(len(labels))
+            
+            boxes = [boxes[idx] for idx in sample_idx]
+            labels = [labels[idx] for idx in sample_idx]
+
         try:
             transformed = self.transform(image=img, bboxes=np.array(boxes), category_ids=labels, masks=[gts,masks,thresh_map,thresh_mask])
             if len(transformed['bboxes']) == 0:
                 return self.__getitem__((idx + 1) % len(self))
-
-            if self.is_train:
-                if len(transformed['category_ids']) > self.config.DATA.SAMPLE_TEXT:
-                    sample_idx = np.random.choice(len(transformed['category_ids']), self.config.DATA.SAMPLE_TEXT, replace=False)
-                else:
-                    sample_idx = range(len(transformed['category_ids']))
 
         except Exception as e:
             print(e)
@@ -71,7 +74,7 @@ class TextOCR_Dataset(Dataset):
         
         
         if self.is_train:
-            prefs_noise = self.calculate_reference_point([transformed['bboxes'][idx] for idx in sample_idx], self.config.DATA.IMAGE_SIZE, self.config.DATA.IMAGE_SIZE)
+            prefs_noise = self.calculate_reference_point(transformed['bboxes'], self.config.DATA.IMAGE_SIZE, self.config.DATA.IMAGE_SIZE)
             sample = {
                 'filename': file_name,
                 'ori_size': (width, height),
@@ -82,7 +85,7 @@ class TextOCR_Dataset(Dataset):
                 'thresh_mask' : thresh_map,
                 'thresh_map' : thresh_mask,
                 'pref_noise': prefs_noise.float() / self.config.DATA.IMAGE_SIZE,
-                'label': [ transformed['category_ids'][idx] for idx in sample_idx ]
+                'label': transformed['category_ids']
             }
  
         else:
