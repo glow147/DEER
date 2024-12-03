@@ -22,6 +22,7 @@ def make_args_parser():
     parser.add_argument("--seed", default=42, type=int)
     parser.add_argument("--weights", default="", type=str)
     parser.add_argument("--test", action="store_true")
+    parser.add_argument("--finetune", action="store_true")
     args = parser.parse_args()
     return args
 
@@ -65,10 +66,13 @@ def main(config):
         )
 
         if config.MODEL.WEIGHTS:
-           
             checkpoint = torch.load(config.MODEL.WEIGHTS, map_location=torch.device('cpu'))
             if "optimizer_states" in checkpoint:
-                trainer.fit(model, datamodule=data_module, ckpt_path=config.MODEL.WEIGHTS)
+                if config.finetune:
+                    model.load_state_dict(checkpoint["state_dict"])
+                    trainer.fit(model, datamodule=data_module)
+                else:
+                    trainer.fit(model, datamodule=data_module, ckpt_path=config.MODEL.WEIGHTS)
             else:
                 model.load_state_dict(checkpoint)
                 trainer.fit(model, datamodule=data_module)
@@ -93,6 +97,7 @@ if __name__ == "__main__":
     config = OmegaConf.load(args.config)
     config.MODEL.WEIGHTS = args.weights
     config.test = args.test
+    config.finetune = args.finetune
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
