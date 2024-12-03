@@ -77,7 +77,11 @@ TextOCR/
 ```
 python main.py —config {config_path}
 ```
-### finetune or continue
+### finetune
+```
+python main.py —config {config.path} —weights {weight.path} --finetune
+```
+### continue
 ```
 python main.py —config {config.path} —weights {weight.path}
 ```
@@ -85,4 +89,10 @@ python main.py —config {config.path} —weights {weight.path}
 ```
 python main.py —config {config.path} —weights {weight.path} —test
 ```
+
+## Update
+### 24-12-03
+Add : NMS Function about result  
+Change : Data sampling point(Character Sampling) code position  
+Fix : finetune error fix
 
